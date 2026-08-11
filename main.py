@@ -1,199 +1,116 @@
 import os
 import discord
-from discord import app_commands
+from discord.ext import commands
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 if not TOKEN:
-    raise RuntimeError("A variável DISCORD_TOKEN não foi configurada na Railway.")
-
+    raise RuntimeError("DISCORD_TOKEN não foi configurado na Railway.")
 
 intents = discord.Intents.default()
-
-bot = discord.Client(intents=intents)
-tree = app_commands.CommandTree(bot)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 
-class Painel(discord.ui.View):
+# =========================
+# MENU DE OPÇÕES
+# =========================
+
+class MenuOpcoes(discord.ui.Select):
+
     def __init__(self):
-        super().__init__(timeout=None)
 
-        select = discord.ui.Select(
-            placeholder="Clique para selecionar uma Opção",
-            custom_id="painel_opcoes",
-            options=[
-                discord.SelectOption(
-                    label="Informações",
-                    description="Veja as informações do serviço",
-                    emoji="ℹ️",
-                    value="informacoes"
-                ),
-                discord.SelectOption(
-                    label="Suporte",
-                    description="Entre em contato com a equipe",
-                    emoji="🎧",
-                    value="suporte"
-                ),
-            ]
-        )
+        options = [
+            discord.SelectOption(
+                label="Download Certificado Hs Pescoço",
+                description="Baixe o certificado da proxy Hs Pescoço",
+                emoji="🗄️",
+                value="certificado"
+            ),
 
-        select.callback = self.selecionar
-        self.add_item(select)
-
-    async def selecionar(self, interaction: discord.Interaction):
-        escolha = interaction.data["values"][0]
-
-        if escolha == "informacoes":
-            embed = discord.Embed(
-                title="ℹ️ Informações",
-                description=(
-                    "Confira abaixo as informações da comunidade.\n\n"
-                    "Caso tenha alguma dúvida, utilize a opção **Suporte**."
-                ),
-                color=discord.Color.blue()
+            discord.SelectOption(
+                label="Registre seu IP Free",
+                description="1 Registro por conta",
+                emoji="📡",
+                value="registrar"
             )
+        ]
 
-            await interaction.response.send_message(
-                embed=embed,
-                ephemeral=True
-            )
-
-        elif escolha == "suporte":
-            embed = discord.Embed(
-                title="🎧 Suporte",
-                description=(
-                    "Precisa de ajuda?\n\n"
-                    "Entre em contato com a equipe através do canal de suporte."
-                ),
-                color=discord.Color.blue()
-            )
-
-            await interaction.response.send_message(
-                embed=embed,
-                ephemeral=True
-            )
-
-
-class BotaoSuporte(discord.ui.Button):
-    def __init__(self):
         super().__init__(
-            label="🎮 Discord do Servidor",
-            style=discord.ButtonStyle.secondary,
-            custom_id="discord_servidor"
+            placeholder="Clique para selecionar uma Opção",
+            options=options,
+            custom_id="menu_opcoes_delrio"
         )
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message(
-            "🎮 Entre no servidor através do convite disponibilizado pela equipe.",
-            ephemeral=True
-        )
+
+        escolha = self.values[0]
+
+        if escolha == "certificado":
+
+            await interaction.response.send_message(
+                "🗄️ **Download Certificado Hs Pescoço**\n\n"
+                "Selecione esta opção para acessar as informações "
+                "disponíveis sobre o certificado.",
+                ephemeral=True
+            )
+
+        elif escolha == "registrar":
+
+            await interaction.response.send_message(
+                "📡 **Registre seu IP Free**\n\n"
+                "Você possui **1 registro por conta**.",
+                ephemeral=True
+            )
 
 
-class PainelCompleto(discord.ui.View):
+# =========================
+# PAINEL
+# =========================
+
+class PainelView(discord.ui.View):
+
     def __init__(self):
         super().__init__(timeout=None)
+        self.add_item(MenuOpcoes())
 
-        select = discord.ui.Select(
-            placeholder="Clique para selecionar uma Opção",
-            custom_id="painel_principal",
-            options=[
-                discord.SelectOption(
-                    label="Informações",
-                    description="Veja as informações do servidor",
-                    emoji="ℹ️",
-                    value="informacoes"
-                ),
-                discord.SelectOption(
-                    label="Suporte",
-                    description="Entre em contato com a equipe",
-                    emoji="🎧",
-                    value="suporte"
-                ),
-            ]
-        )
 
-        select.callback = self.selecionar
-        self.add_item(select)
+# =========================
+# COMANDO !painel
+# =========================
 
-        self.add_item(BotaoSuporte())
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def painel(ctx):
 
-    async def selecionar(self, interaction: discord.Interaction):
-        escolha = interaction.data["values"][0]
+    embed = discord.Embed(
+        title="Proxy iOS FREE",
+        description=(
+            "① Instale o certificado no seu dispositivo\n"
+            "② Configure a proxy no seu Wi-Fi\n"
+            "③ Abra o Free Fire e entre na sua conta\n\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "❔ proxy hs/antena\n"
+            "🔎 Servidor: `93.127.132.29`\n"
+            "🚚 Porta: `10047`"
+        ),
+        color=discord.Color.dark_grey()
+    )
 
-        if escolha == "informacoes":
-            embed = discord.Embed(
-                title="ℹ️ Informações",
-                description=(
-                    "**Bem-vindo(a)!**\n\n"
-                    "Aqui você encontra as principais informações "
-                    "da comunidade e dos serviços disponíveis."
-                ),
-                color=discord.Color.blue()
-            )
+    await ctx.send(
+        embed=embed,
+        view=PainelView()
+    )
 
-            await interaction.response.send_message(
-                embed=embed,
-                ephemeral=True
-            )
 
-        elif escolha == "suporte":
-            embed = discord.Embed(
-                title="🎧 Suporte",
-                description=(
-                    "Para receber atendimento, procure a equipe "
-                    "responsável pelo suporte."
-                ),
-                color=discord.Color.blue()
-            )
-
-            await interaction.response.send_message(
-                embed=embed,
-                ephemeral=True
-            )
-
+# =========================
+# BOT ONLINE
+# =========================
 
 @bot.event
 async def on_ready():
-    print(f"Bot conectado como {bot.user}")
 
-    try:
-        synced = await tree.sync()
-        print(f"{len(synced)} comando(s) sincronizado(s).")
-    except Exception as e:
-        print(f"Erro ao sincronizar comandos: {e}")
-
-
-@tree.command(
-    name="painel",
-    description="Envia o painel principal do servidor."
-)
-async def painel(interaction: discord.Interaction):
-
-    embed = discord.Embed(
-        title="Bem-vindo(a) à Delrio | 1K",
-        description=(
-            "Este é seu servidor, novinho em folha.\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "📱 **Informações do Serviço**\n\n"
-            "① Confira as informações abaixo\n"
-            "② Utilize o menu para acessar as opções\n"
-            "③ Em caso de dúvidas, procure o suporte\n\n"
-            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "🔍 **Servidor:** Disponível no canal de informações\n"
-            "🚚 **Porta:** Consulte a equipe responsável\n\n"
-            "Selecione uma opção no menu abaixo."
-        ),
-        color=discord.Color.dark_theme()
-    )
-
-    embed.set_footer(
-        text="Delrio • Sistema de Atendimento"
-    )
-
-    await interaction.response.send_message(
-        embed=embed,
-        view=PainelCompleto()
-    )
+    print(f"✅ Bot conectado como {bot.user}")
+    print("✅ Painel carregado.")
 
 
 bot.run(TOKEN)
